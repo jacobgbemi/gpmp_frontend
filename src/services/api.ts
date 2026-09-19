@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { config } from "@/app/config";
 import { ApiError, type ApiErrorBody } from "@/types/api";
+import type { TokenRefreshResponse } from "@/features/auth/types";
 import { tokenStorage } from "./tokenStorage";
 
 /**
@@ -46,13 +47,15 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
-    const response = await axios.post<{ access: string }>(
+    const response = await axios.post<TokenRefreshResponse>(
       `${config.apiBaseUrl}/api/auth/token/refresh/`,
       { refresh: refreshToken },
     );
-    const newAccessToken = response.data.access;
-    tokenStorage.setAccessToken(newAccessToken);
-    return newAccessToken;
+    // The backend rotates refresh tokens (and blacklists the old one),
+    // so the new refresh token MUST be persisted or the next refresh
+    // will fail and the user gets logged out.
+    tokenStorage.setTokens(response.data);
+    return response.data.access;
   } catch {
     tokenStorage.clear();
     return null;
@@ -106,11 +109,40 @@ apiClient.interceptors.response.use(
   },
 );
 
+/**
+ * Pull the most useful human-readable message out of a backend error
+ * body. Handles the project's `{ success, message, errors }` envelope,
+ * raw DRF `{ detail }` bodies, and DRF field-validation errors.
+ */
+function extractMessage(body: ApiErrorBody | undefined): string | null {
+  if (!body || typeof body !== "object") return null;
+
+  const firstFieldError = (errors: unknown): string | null => {
+    if (!errors || typeof errors !== "object") return null;
+    for (const value of Object.values(errors)) {
+      if (typeof value === "string") return value;
+      if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+    }
+    return null;
+  };
+
+  const fieldError = firstFieldError(body.errors);
+  if (typeof body.message === "string" && body.message) {
+    // "Request failed." is the generic envelope message for 400s —
+    // the first field error is more useful when there is one.
+    return fieldError && body.message === "Request failed."
+      ? fieldError
+      : body.message;
+  }
+  if (typeof body.detail === "string" && body.detail) return body.detail;
+  return fieldError;
+}
+
 function toApiError(error: AxiosError<ApiErrorBody>): ApiError {
   if (error.response) {
     const body = error.response.data;
     const message =
-      (typeof body?.detail === "string" && body.detail) ||
+      extractMessage(body) ||
       error.message ||
       "Something went wrong. Please try again.";
     return new ApiError(message, error.response.status, body);

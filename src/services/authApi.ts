@@ -3,6 +3,7 @@ import type {
   CurrentUser,
   LoginCredentials,
   TokenPair,
+  TokenRefreshResponse,
 } from "@/features/auth/types";
 
 /**
@@ -19,8 +20,8 @@ export const authApi = {
     return response.data;
   },
 
-  refresh: async (refreshToken: string): Promise<{ access: string }> => {
-    const response = await apiClient.post<{ access: string }>(
+  refresh: async (refreshToken: string): Promise<TokenRefreshResponse> => {
+    const response = await apiClient.post<TokenRefreshResponse>(
       "/api/auth/token/refresh/",
       {
         refresh: refreshToken,

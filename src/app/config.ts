@@ -17,7 +17,18 @@ function readApiBaseUrl(): string {
     );
   }
 
-  return value ?? "";
+  // Strip trailing slashes: request paths already start with "/api/...".
+  const baseUrl = (value ?? "").replace(/\/+$/, "");
+
+  if (baseUrl.endsWith("/api")) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "VITE_API_BASE_URL should not include the /api suffix — requests already " +
+        "start with /api/, so this would call /api/api/... and return 404.",
+    );
+  }
+
+  return baseUrl;
 }
 
 export const config = {

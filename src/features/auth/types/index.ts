@@ -15,16 +15,41 @@ export interface TokenPair {
 }
 
 /**
- * GET /api/auth/me/
+ * POST /api/auth/token/refresh/
  *
- * Kept intentionally loose (`[key: string]: unknown`) on top of the
- * known fields, since the backend may return additional profile
- * fields (organization, role, etc.) that later stages will consume.
+ * The backend rotates refresh tokens (ROTATE_REFRESH_TOKENS=True), so
+ * a new `refresh` is returned alongside the new `access`.
+ */
+export interface TokenRefreshResponse {
+  access: string;
+  refresh?: string;
+}
+
+export type OrganizationRole =
+  | "PLATFORM_ADMIN"
+  | "ORGANIZATION_ADMIN"
+  | "PROJECT_MANAGER"
+  | "PROJECT_CONTROLS"
+  | "SITE_INSPECTOR"
+  | "CONSULTANT"
+  | "CLIENT_OWNER"
+  | "VIEWER";
+
+export interface MembershipSummary {
+  id: string;
+  organization_id: string;
+  organization_name: string;
+  organization_slug: string;
+  role: OrganizationRole;
+}
+
+/**
+ * GET /api/auth/me/
  */
 export interface CurrentUser {
   id: number | string;
   email: string;
   first_name?: string;
   last_name?: string;
-  [key: string]: unknown;
+  memberships?: MembershipSummary[];
 }

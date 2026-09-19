@@ -52,8 +52,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       try {
-        const { access } = await authApi.refresh(refreshToken);
-        tokenStorage.setAccessToken(access);
+                // Persist the rotated refresh token as well as the new access token.
+        const tokens = await authApi.refresh(refreshToken);
+        tokenStorage.setTokens(tokens);
         const currentUser = await authApi.getCurrentUser();
         if (!cancelled) {
           setUser(currentUser);

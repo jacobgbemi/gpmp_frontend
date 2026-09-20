@@ -139,3 +139,46 @@ Projects, Payments, Risks, Variations, Inspections, Documents,
 Reports and Notifications are out of scope until later stages — see
 `stage-2.md` onward. Sidebar navigation items for those areas are
 rendered as disabled placeholders.
+
+## Stage 2 — Projects & Owner Dashboard
+
+Adds the Projects module: a searchable, filterable, paginated project
+list, and a per-project shell (`/projects/:id/dashboard|progress|payments`)
+with the executive dashboard, progress history and payment
+applications.
+
+**API contract.** Types and endpoints in `features/projects/` are
+built directly against the backend's own Stage 2 spec
+(`gpmp_backend/stage-2.md`) — routes are `GET /api/projects/`,
+`GET /api/projects/{id}/`, `GET /api/projects/{id}/dashboard/`,
+`GET /api/projects/{id}/progress/`, `GET /api/projects/{id}/payments/`,
+all returning DRF's standard shapes (paginated list:
+`{count, next, previous, results}`; detail: the raw serializer
+object — no envelope, consistent with the existing `/api/auth/me/`
+and `/api/organizations/` endpoints). A few UI-only fields
+(`Project.physical_progress`/`planned_progress`/`health`/`last_update`,
+`ProjectDashboard.executive_status`) aren't in the backend's minimal
+field list yet and are typed as optional — the UI shows "—" or omits
+the section gracefully when they're absent. **Confirm and adjust
+`features/projects/types/index.ts` once the real Stage 2 backend
+endpoints exist.**
+
+**Payment summary.** The four payment figures (Requested,
+Recommended, Approved, Paid) are always rendered as separate values —
+see `paymentTotals.ts` and `PaymentSummary.tsx` — and are computed
+client-side by summing the project's payment applications, since the
+backend's dashboard spec doesn't (yet) return a payment breakdown.
+`Pending` uses the dashboard's own `pending_payments` figure when
+present, falling back to `approved − paid`.
+
+**Executive status.** The dashboard's status narrative
+(`executive_status.*`) is rendered verbatim from the backend and
+never generated or inferred on the frontend — if a field is missing,
+that line is simply omitted.
+
+## Stage 2 scope
+
+Only the routes above were added. Variations, Risks & Issues,
+Inspections, Documents, Reports, Team and Settings remain disabled
+placeholders in both the sidebar and the per-project tab bar — do not
+wire them up until their own stage.

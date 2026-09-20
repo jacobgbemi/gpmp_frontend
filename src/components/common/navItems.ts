@@ -2,13 +2,11 @@ import {
   AlertTriangle,
   BarChart3,
   ClipboardCheck,
-  CreditCard,
   FileText,
   FolderKanban,
   GitBranch,
   LayoutDashboard,
   Settings,
-  TrendingUp,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -17,26 +15,19 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Pages beyond Stage 1 are placeholders: visible, but not yet routed. */
+  /** Pages beyond the current stage are placeholders: visible, but not yet routed. */
   comingSoon?: boolean;
 }
 
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  {
-    label: "Projects",
-    href: "/projects",
-    icon: FolderKanban,
-    comingSoon: true,
-  },
-  { label: "Payments", href: "/payments", icon: CreditCard, comingSoon: true },
+  { label: "Projects", href: "/projects", icon: FolderKanban },
   {
     label: "Variations",
     href: "/variations",
     icon: GitBranch,
     comingSoon: true,
   },
-  { label: "Progress", href: "/progress", icon: TrendingUp, comingSoon: true },
   {
     label: "Risks & Issues",
     href: "/risks",

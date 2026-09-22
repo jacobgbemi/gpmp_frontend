@@ -1,6 +1,8 @@
 import { useParams } from "react-router-dom";
-import { ErrorState } from "@/components/common/ErrorState";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProject } from "../api/useProject";
 import { useProjectDashboard } from "../api/useProjectDashboard";
 import { useProjectPayments } from "../api/useProjectPayments";
 import { BudgetChart } from "../components/dashboard/BudgetChart";
@@ -10,58 +12,94 @@ import { KpiGrid } from "../components/dashboard/KpiGrid";
 import { PaymentSummary } from "../components/dashboard/PaymentSummary";
 import { ProgressSection } from "../components/dashboard/ProgressSection";
 import { ProjectHeader } from "../components/dashboard/ProjectHeader";
+import { summarizeDashboard } from "../lib/dashboardSummary";
+import { deriveProjectHealth } from "../lib/health";
 import { computePaymentTotals } from "../lib/paymentTotals";
+
+// The backend caps page_size at 100 (common/pagination.py).
+const PAYMENT_SUMMARY_PAGE_SIZE = 100;
 
 /**
  * The most important screen in the product: "an owner should
  * understand the health of a high-value project within 30 seconds."
+ *
+ * The dashboard endpoint returns numbers only, so the project itself
+ * (name, currency, contract value...) comes from `useProject`.
  */
 export function ProjectDashboardPage() {
   const { id } = useParams<{ id: string }>();
 
+  const projectQuery = useProject(id);
   const dashboardQuery = useProjectDashboard(id);
-  // A larger page size here keeps the payment summary accurate without
-  // a dedicated backend aggregate endpoint — see paymentTotals.ts.
-  const paymentsQuery = useProjectPayments(id, { page_size: 100 });
+  const paymentsQuery = useProjectPayments(id, {
+    page_size: PAYMENT_SUMMARY_PAGE_SIZE,
+  });
 
-  if (dashboardQuery.isPending) {
+  if (dashboardQuery.isPending || projectQuery.isPending) {
     return <PageSkeleton />;
   }
 
   if (dashboardQuery.isError || !dashboardQuery.data) {
     return (
-      <ErrorState
-        kind="500"
-        description="We couldn't load this project's dashboard. Please try again."
-        actionLabel="Retry"
-        onAction={() => dashboardQuery.refetch()}
+      <QueryErrorState
+        error={dashboardQuery.error}
+        what="this project's dashboard"
+        onRetry={() => dashboardQuery.refetch()}
       />
     );
   }
 
+  if (projectQuery.isError || !projectQuery.data) {
+    return (
+      <QueryErrorState
+        error={projectQuery.error}
+        what="this project"
+        onRetry={() => projectQuery.refetch()}
+      />
+    );
+  }
+
+  const project = projectQuery.data;
   const dashboard = dashboardQuery.data;
-  const totals = computePaymentTotals(paymentsQuery.data?.results ?? []);
+  const currency = project.currency;
+
+  const payments = paymentsQuery.data;
+  const totals = computePaymentTotals(payments?.results ?? []);
+  const health = deriveProjectHealth(dashboard);
+  const summary = summarizeDashboard(dashboard, currency);
 
   return (
     <div className="flex flex-col gap-6">
-      <ProjectHeader dashboard={dashboard} />
-      <KpiGrid dashboard={dashboard} />
+      <ProjectHeader project={project} dashboard={dashboard} />
+      <KpiGrid dashboard={dashboard} currency={currency} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <FinancialSummary dashboard={dashboard} />
-        <BudgetChart dashboard={dashboard} />
+        <FinancialSummary dashboard={dashboard} currency={currency} />
+        <BudgetChart dashboard={dashboard} currency={currency} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ProgressSection dashboard={dashboard} />
-        <PaymentSummary
-          totals={totals}
-          currency={dashboard.project.currency}
-          pendingOverride={dashboard.pending_payments}
-        />
+        {paymentsQuery.isError ? (
+          <QueryErrorState
+            error={paymentsQuery.error}
+            what="the payment summary"
+            onRetry={() => paymentsQuery.refetch()}
+          />
+        ) : payments ? (
+          <PaymentSummary
+            totals={totals}
+            currency={currency}
+            pendingTotal={dashboard.pending_payments_total}
+            pendingCount={dashboard.pending_payments_count}
+            isPartial={payments.count > payments.results.length}
+          />
+        ) : (
+          <Skeleton className="h-64 w-full" />
+        )}
       </div>
 
-      <ExecutiveStatus dashboard={dashboard} />
+      <ExecutiveStatus summary={summary} health={health} />
     </div>
   );
 }

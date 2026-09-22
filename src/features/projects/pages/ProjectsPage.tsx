@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FolderKanban } from "lucide-react";
-import { ErrorState } from "@/components/common/ErrorState";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Pagination } from "@/components/common/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -19,7 +19,7 @@ export function ProjectsPage() {
 
   const debouncedSearch = useDebouncedValue(search);
 
-  const { data, isPending, isError, isFetching, refetch } = useProjects({
+  const { data, error, isPending, isError, isFetching, refetch } = useProjects({
     search: debouncedSearch,
     status,
     page,
@@ -66,11 +66,10 @@ export function ProjectsPage() {
       )}
 
       {isError && (
-        <ErrorState
-          kind="500"
-          description="We couldn't load your projects. Please try again."
-          actionLabel="Retry"
-          onAction={() => refetch()}
+        <QueryErrorState
+          error={error}
+          what="your projects"
+          onRetry={() => refetch()}
         />
       )}
 

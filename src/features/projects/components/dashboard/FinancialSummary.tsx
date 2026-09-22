@@ -1,5 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatVariance, varianceTone } from "@/lib/format";
+import {
+  formatCurrency,
+  formatSignedCurrency,
+  varianceTone,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ProjectDashboard } from "../../types";
 
@@ -9,12 +13,15 @@ const TONE_TEXT: Record<"positive" | "negative" | "neutral", string> = {
   neutral: "text-foreground",
 };
 
+interface FinancialSummaryProps {
+  dashboard: ProjectDashboard;
+  currency: string;
+}
+
 export function FinancialSummary({
   dashboard,
-}: {
-  dashboard: ProjectDashboard;
-}) {
-  const currency = dashboard.project.currency;
+  currency,
+}: FinancialSummaryProps) {
   const rows: { label: string; value: string; emphasis?: boolean }[] = [
     {
       label: "Original Budget",
@@ -39,7 +46,9 @@ export function FinancialSummary({
     },
   ];
 
-  const costTone = varianceTone(dashboard.cost_variance, "negative");
+  // cost_variance is a money amount (approved budget - forecast):
+  // positive = under budget (favorable), negative = over budget.
+  const costTone = varianceTone(dashboard.cost_variance, "positive");
 
   return (
     <Card>
@@ -64,9 +73,11 @@ export function FinancialSummary({
           </div>
         ))}
         <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
-          <span className="text-muted-foreground">Cost Variance</span>
+          <span className="text-muted-foreground">
+            Cost Variance <span className="text-xs">(budget − forecast)</span>
+          </span>
           <span className={cn("font-semibold", TONE_TEXT[costTone])}>
-            {formatVariance(dashboard.cost_variance)}
+            {formatSignedCurrency(dashboard.cost_variance, currency)}
           </span>
         </div>
       </CardContent>

@@ -51,6 +51,35 @@ export function formatCurrency(
 }
 
 /**
+ * Like `formatCurrency`, but renders "—" for null/undefined. Use for
+ * amounts that legitimately do not exist yet (e.g. a payment's
+ * `amount_recommended` before it has been reviewed): "not decided" is
+ * not the same as ₦0.
+ */
+export function formatCurrencyOrDash(
+  value: string | number | null | undefined,
+  currency = "NGN",
+): string {
+  if (value === null || value === undefined || value === "") return "—";
+  return formatCurrency(value, currency);
+}
+
+/**
+ * Money with an explicit sign, for cost variance: "+₦15,000,000" /
+ * "-₦15,000,001". Never use `formatVariance` for money — that one
+ * appends "%".
+ */
+export function formatSignedCurrency(
+  value: string | number | null | undefined,
+  currency = "NGN",
+): string {
+  const amount = toNumber(value);
+  if (amount === 0) return formatCurrency(0, currency);
+  const sign = amount > 0 ? "+" : "-";
+  return `${sign}${formatCurrency(Math.abs(amount), currency)}`;
+}
+
+/**
  * Compact form for tight spaces (KPI cards): ₦500M instead of
  * ₦500,000,000.
  */

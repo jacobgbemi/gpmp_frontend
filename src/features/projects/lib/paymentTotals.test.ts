@@ -5,12 +5,18 @@ import type { PaymentApplication } from "../types";
 function payment(overrides: Partial<PaymentApplication>): PaymentApplication {
   return {
     id: "1",
-    project: "p1",
+    application_number: "PA-0001",
     amount_requested: "0",
-    amount_recommended: "0",
-    amount_approved: "0",
+    amount_recommended: null,
+    amount_approved: null,
     amount_paid: "0",
     status: "DRAFT",
+    submission_date: "2026-01-01",
+    review_date: null,
+    payment_date: null,
+    reviewer_notes: "",
+    submitted_by_email: "owner@example.com",
+    reviewer_email: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -40,18 +46,16 @@ describe("computePaymentTotals", () => {
     expect(totals.amount_paid).toBe(150);
   });
 
-  it("derives pending amount as approved minus paid", () => {
+  it("treats a null recommended/approved amount as not-yet-decided (0 in the sum)", () => {
     const totals = computePaymentTotals([
-      payment({ amount_approved: "230", amount_paid: "150" }),
+      payment({
+        amount_requested: "100",
+        amount_recommended: null,
+        amount_approved: null,
+      }),
     ]);
-    expect(totals.pending_amount).toBe(80);
-  });
-
-  it("never returns a negative pending amount", () => {
-    const totals = computePaymentTotals([
-      payment({ amount_approved: "50", amount_paid: "80" }),
-    ]);
-    expect(totals.pending_amount).toBe(0);
+    expect(totals.amount_recommended).toBe(0);
+    expect(totals.amount_approved).toBe(0);
   });
 
   it("returns all zeros for an empty list", () => {
@@ -61,7 +65,6 @@ describe("computePaymentTotals", () => {
       amount_recommended: 0,
       amount_approved: 0,
       amount_paid: 0,
-      pending_amount: 0,
     });
   });
 });

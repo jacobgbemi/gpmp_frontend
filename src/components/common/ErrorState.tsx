@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  Clock,
   Lock,
   ShieldOff,
   Wifi,
@@ -8,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type ErrorKind = "401" | "403" | "404" | "500" | "network" | "generic";
+export type ErrorKind =
+  "401" | "403" | "404" | "429" | "500" | "network" | "generic";
 
 interface ErrorStateConfig {
   icon: LucideIcon;
@@ -31,6 +33,12 @@ const ERROR_CONFIG: Record<ErrorKind, ErrorStateConfig> = {
     icon: AlertTriangle,
     title: "Page not found",
     description: "The page you're looking for doesn't exist or has moved.",
+  },
+  "429": {
+    icon: Clock,
+    title: "Too many requests",
+    description:
+      "You're sending requests too quickly. Wait a moment and try again.",
   },
   "500": {
     icon: AlertTriangle,

@@ -42,9 +42,13 @@ function ChartTooltip({
  * and Forecast Final Cost — real values from the dashboard endpoint,
  * not an invented time series.
  */
-export function BudgetChart({ dashboard }: { dashboard: ProjectDashboard }) {
-  const currency = dashboard.project.currency;
-
+export function BudgetChart({
+  dashboard,
+  currency,
+}: {
+  dashboard: ProjectDashboard;
+  currency: string;
+}) {
   const data = [
     {
       label: "Budget",

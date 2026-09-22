@@ -1,11 +1,14 @@
 import { MapPin } from "lucide-react";
 import { formatCurrencyCompact, formatDate } from "@/lib/format";
 import { ProjectStatusBadge } from "../ProjectStatusBadge";
-import type { ProjectDashboard } from "../../types";
+import type { Project, ProjectDashboard } from "../../types";
 
-export function ProjectHeader({ dashboard }: { dashboard: ProjectDashboard }) {
-  const { project } = dashboard;
+interface ProjectHeaderProps {
+  project: Project;
+  dashboard: ProjectDashboard;
+}
 
+export function ProjectHeader({ project, dashboard }: ProjectHeaderProps) {
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-1.5">
@@ -30,11 +33,11 @@ export function ProjectHeader({ dashboard }: { dashboard: ProjectDashboard }) {
         <p className="text-xl font-semibold text-primary">
           {formatCurrencyCompact(project.contract_value, project.currency)}
         </p>
-        {dashboard.reporting_date && (
-          <p className="text-xs text-muted-foreground">
-            As of {formatDate(dashboard.reporting_date)}
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          {dashboard.as_of_reporting_date
+            ? `Reporting date ${formatDate(dashboard.as_of_reporting_date)}`
+            : "No progress reported yet"}
+        </p>
       </div>
     </div>
   );

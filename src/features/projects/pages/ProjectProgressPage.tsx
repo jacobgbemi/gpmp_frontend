@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
-import { ErrorState } from "@/components/common/ErrorState";
 import { Pagination } from "@/components/common/Pagination";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -13,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  formatDate,
-  formatPercent,
-  formatVariance,
-  toNumber,
-  varianceTone,
-} from "@/lib/format";
+import { formatDate, formatPercent, formatVariance } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useProjectProgress } from "../api/useProjectProgress";
 
@@ -31,11 +25,17 @@ const TONE_TEXT: Record<"positive" | "negative" | "neutral", string> = {
   neutral: "text-foreground",
 };
 
+/** actual - planned > 0 is ahead of schedule (favorable). */
+function varianceToneOf(variance: number): "positive" | "negative" | "neutral" {
+  if (variance === 0) return "neutral";
+  return variance > 0 ? "positive" : "negative";
+}
+
 export function ProjectProgressPage() {
   const { id } = useParams<{ id: string }>();
   const [page, setPage] = useState(1);
 
-  const { data, isPending, isError, refetch } = useProjectProgress(id, {
+  const { data, error, isPending, isError, refetch } = useProjectProgress(id, {
     page,
     page_size: PAGE_SIZE,
   });
@@ -51,11 +51,10 @@ export function ProjectProgressPage() {
 
   if (isError || !data) {
     return (
-      <ErrorState
-        kind="500"
-        description="We couldn't load this project's progress history."
-        actionLabel="Retry"
-        onAction={() => refetch()}
+      <QueryErrorState
+        error={error}
+        what="this project's progress history"
+        onRetry={() => refetch()}
       />
     );
   }
@@ -86,7 +85,8 @@ export function ProjectProgressPage() {
           <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Latest update · {formatDate(latest.reporting_date)}
+                Latest update · {formatDate(latest.reporting_date)} ·{" "}
+                {latest.submitted_by_email}
               </p>
               <p className="mt-1 text-sm text-foreground">
                 {latest.notes || "No narrative provided."}
@@ -96,13 +96,13 @@ export function ProjectProgressPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Planned</p>
                 <p className="font-semibold text-foreground">
-                  {formatPercent(latest.planned_progress)}
+                  {formatPercent(latest.planned_progress_percent, 1)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Actual</p>
                 <p className="font-semibold text-foreground">
-                  {formatPercent(latest.actual_progress)}
+                  {formatPercent(latest.actual_progress_percent, 1)}
                 </p>
               </div>
               <div>
@@ -110,19 +110,10 @@ export function ProjectProgressPage() {
                 <p
                   className={cn(
                     "font-semibold",
-                    TONE_TEXT[
-                      varianceTone(
-                        toNumber(latest.actual_progress) -
-                          toNumber(latest.planned_progress),
-                        "positive",
-                      )
-                    ],
+                    TONE_TEXT[varianceToneOf(latest.progress_variance_percent)],
                   )}
                 >
-                  {formatVariance(
-                    toNumber(latest.actual_progress) -
-                      toNumber(latest.planned_progress),
-                  )}
+                  {formatVariance(latest.progress_variance_percent, 1)}
                 </p>
               </div>
             </div>
@@ -141,37 +132,40 @@ export function ProjectProgressPage() {
               <TableHead>Planned</TableHead>
               <TableHead>Actual</TableHead>
               <TableHead>Variance</TableHead>
+              <TableHead>Submitted by</TableHead>
               <TableHead>Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.results.map((update) => {
-              const variance =
-                toNumber(update.actual_progress) -
-                toNumber(update.planned_progress);
-              return (
-                <TableRow key={update.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {formatDate(update.reporting_date)}
-                  </TableCell>
-                  <TableCell>
-                    {formatPercent(update.planned_progress)}
-                  </TableCell>
-                  <TableCell>{formatPercent(update.actual_progress)}</TableCell>
-                  <TableCell
-                    className={TONE_TEXT[varianceTone(variance, "positive")]}
-                  >
-                    {formatVariance(variance)}
-                  </TableCell>
-                  <TableCell
-                    className="max-w-xs truncate text-muted-foreground"
-                    title={update.notes}
-                  >
-                    {update.notes || "—"}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {data.results.map((update) => (
+              <TableRow key={update.id}>
+                <TableCell className="whitespace-nowrap">
+                  {formatDate(update.reporting_date)}
+                </TableCell>
+                <TableCell>
+                  {formatPercent(update.planned_progress_percent, 1)}
+                </TableCell>
+                <TableCell>
+                  {formatPercent(update.actual_progress_percent, 1)}
+                </TableCell>
+                <TableCell
+                  className={
+                    TONE_TEXT[varianceToneOf(update.progress_variance_percent)]
+                  }
+                >
+                  {formatVariance(update.progress_variance_percent, 1)}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {update.submitted_by_email}
+                </TableCell>
+                <TableCell
+                  className="max-w-xs truncate text-muted-foreground"
+                  title={update.notes}
+                >
+                  {update.notes || "—"}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
         <Pagination

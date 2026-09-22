@@ -53,8 +53,8 @@ export function ProgressSection({
 }: {
   dashboard: ProjectDashboard;
 }) {
-  const planned = toNumber(dashboard.planned_progress);
-  const actual = toNumber(dashboard.actual_progress);
+  const planned = toNumber(dashboard.planned_progress_percent);
+  const actual = toNumber(dashboard.actual_progress_percent);
   const variance = toNumber(dashboard.schedule_variance);
   const tone = varianceTone(dashboard.schedule_variance, "positive");
 
@@ -73,19 +73,19 @@ export function ProgressSection({
           <div>
             <p className="text-xs text-muted-foreground">Planned</p>
             <p className="text-base font-semibold text-foreground">
-              {formatPercent(planned)}
+              {formatPercent(planned, 1)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Actual</p>
             <p className="text-base font-semibold text-foreground">
-              {formatPercent(actual)}
+              {formatPercent(actual, 1)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Variance</p>
             <p className={cn("text-base font-semibold", TONE_TEXT[tone])}>
-              {formatVariance(variance)}
+              {formatVariance(variance, 1)}
             </p>
           </div>
         </div>

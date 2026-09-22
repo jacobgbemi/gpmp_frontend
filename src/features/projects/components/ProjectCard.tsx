@@ -3,10 +3,10 @@ import { MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   formatCurrencyCompact,
-  formatPercent,
+  formatDate,
   formatRelativeDate,
+  formatStatusLabel,
 } from "@/lib/format";
-import { ProjectHealthBadge } from "./ProjectHealthBadge";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import type { Project } from "../types";
 
@@ -44,20 +44,19 @@ export function ProjectCard({ project }: { project: Project }) {
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Progress</p>
+            <p className="text-xs text-muted-foreground">Planned end</p>
             <p className="font-medium text-foreground">
-              {project.physical_progress !== undefined
-                ? formatPercent(project.physical_progress)
-                : "—"}
+              {formatDate(project.planned_end_date)}
             </p>
           </div>
         </div>
 
         <div className="flex items-center justify-between border-t border-border pt-3">
-          <ProjectHealthBadge health={project.health} />
           <span className="text-xs text-muted-foreground">
-            Updated{" "}
-            {formatRelativeDate(project.last_update ?? project.updated_at)}
+            {formatStatusLabel(project.project_type)}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Updated {formatRelativeDate(project.updated_at)}
           </span>
         </div>
       </CardContent>

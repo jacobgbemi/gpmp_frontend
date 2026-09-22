@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/table";
 import {
   formatCurrencyCompact,
-  formatPercent,
+  formatDate,
   formatRelativeDate,
+  formatStatusLabel,
 } from "@/lib/format";
-import { ProjectHealthBadge } from "./ProjectHealthBadge";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import type { Project } from "../types";
 
@@ -32,9 +32,9 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
           <TableHead>Project</TableHead>
           <TableHead>Location</TableHead>
           <TableHead>Contract value</TableHead>
-          <TableHead>Progress</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Planned end</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Health</TableHead>
           <TableHead>Last update</TableHead>
         </TableRow>
       </TableHeader>
@@ -58,29 +58,17 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
             <TableCell>
               {formatCurrencyCompact(project.contract_value, project.currency)}
             </TableCell>
-            <TableCell>
-              {project.physical_progress !== undefined ? (
-                <span>
-                  {formatPercent(project.physical_progress)}
-                  {project.planned_progress !== undefined && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      / {formatPercent(project.planned_progress)} planned
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
+            <TableCell className="text-muted-foreground">
+              {formatStatusLabel(project.project_type)}
+            </TableCell>
+            <TableCell className="whitespace-nowrap text-muted-foreground">
+              {formatDate(project.planned_end_date)}
             </TableCell>
             <TableCell>
               <ProjectStatusBadge status={project.status} />
             </TableCell>
-            <TableCell>
-              <ProjectHealthBadge health={project.health} />
-            </TableCell>
             <TableCell className="text-muted-foreground">
-              {formatRelativeDate(project.last_update ?? project.updated_at)}
+              {formatRelativeDate(project.updated_at)}
             </TableCell>
           </TableRow>
         ))}

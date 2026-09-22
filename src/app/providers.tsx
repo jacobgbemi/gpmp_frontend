@@ -4,11 +4,15 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/features/auth/context/AuthProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
+import { isNonRetryable } from "@/lib/apiErrors";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      // Don't retry 4xx (403/404/429/validation): it can't succeed and
+      // only delays the error state. Retry other failures once.
+      retry: (failureCount, error) =>
+        !isNonRetryable(error) && failureCount < 1,
       refetchOnWindowFocus: false,
       staleTime: 60 * 1000,
     },

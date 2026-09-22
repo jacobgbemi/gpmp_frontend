@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/features/projects/api/useProject";
-import { ErrorState } from "@/components/common/ErrorState";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const TABS = [
@@ -27,7 +27,7 @@ const COMING_SOON_TABS = [
  */
 export function ProjectLayout() {
   const { id } = useParams<{ id: string }>();
-  const { data: project, isPending, isError, refetch } = useProject(id);
+  const { data: project, error, isPending, isError, refetch } = useProject(id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,12 +41,15 @@ export function ProjectLayout() {
       {isPending && <Skeleton className="h-8 w-64" />}
 
       {isError && (
-        <ErrorState
-          kind="404"
-          title="Project not found"
-          description="This project doesn't exist, or you don't have access to it."
-          actionLabel="Retry"
-          onAction={() => refetch()}
+        <QueryErrorState
+          error={error}
+          what="this project"
+          notFound={{
+            title: "Project not found",
+            description:
+              "This project doesn't exist, or you don't have access to it.",
+          }}
+          onRetry={() => refetch()}
         />
       )}
 

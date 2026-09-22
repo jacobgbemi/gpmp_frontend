@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { CreditCard } from "lucide-react";
-import { ErrorState } from "@/components/common/ErrorState";
 import { Pagination } from "@/components/common/Pagination";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrencyOrDash, formatDate } from "@/lib/format";
 import { useProject } from "../api/useProject";
 import { useProjectPayments } from "../api/useProjectPayments";
 import { PaymentStatusBadge } from "../components/PaymentStatusBadge";
@@ -21,15 +21,17 @@ const PAGE_SIZE = 10;
 
 /**
  * Payment applications for this project. Requested / Recommended /
- * Approved / Paid are always shown as separate columns — see
- * stage-2.md: "Never collapse these four payment values into one."
+ * Approved / Paid are always shown as separate columns, never netted.
+ * Recommended/Approved render "—" (via formatCurrencyOrDash) until
+ * they are actually null on the backend, since null means "not yet
+ * decided", not zero.
  */
 export function ProjectPaymentsPage() {
   const { id } = useParams<{ id: string }>();
   const [page, setPage] = useState(1);
 
   const { data: project } = useProject(id);
-  const { data, isPending, isError, refetch } = useProjectPayments(id, {
+  const { data, error, isPending, isError, refetch } = useProjectPayments(id, {
     page,
     page_size: PAGE_SIZE,
   });
@@ -42,11 +44,10 @@ export function ProjectPaymentsPage() {
 
   if (isError || !data) {
     return (
-      <ErrorState
-        kind="500"
-        description="We couldn't load this project's payment applications."
-        actionLabel="Retry"
-        onAction={() => refetch()}
+      <QueryErrorState
+        error={error}
+        what="this project's payment applications"
+        onRetry={() => refetch()}
       />
     );
   }
@@ -79,32 +80,32 @@ export function ProjectPaymentsPage() {
             <TableHead>Approved</TableHead>
             <TableHead>Paid</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead>Submitted</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.results.map((payment) => (
             <TableRow key={payment.id}>
               <TableCell className="font-medium text-foreground">
-                {payment.reference || `#${payment.id.slice(0, 8)}`}
+                {payment.application_number}
               </TableCell>
               <TableCell>
-                {formatCurrency(payment.amount_requested, currency)}
+                {formatCurrencyOrDash(payment.amount_requested, currency)}
               </TableCell>
               <TableCell>
-                {formatCurrency(payment.amount_recommended, currency)}
+                {formatCurrencyOrDash(payment.amount_recommended, currency)}
               </TableCell>
               <TableCell>
-                {formatCurrency(payment.amount_approved, currency)}
+                {formatCurrencyOrDash(payment.amount_approved, currency)}
               </TableCell>
               <TableCell>
-                {formatCurrency(payment.amount_paid, currency)}
+                {formatCurrencyOrDash(payment.amount_paid, currency)}
               </TableCell>
               <TableCell>
                 <PaymentStatusBadge status={payment.status} />
               </TableCell>
               <TableCell className="whitespace-nowrap text-muted-foreground">
-                {formatDate(payment.created_at)}
+                {formatDate(payment.submission_date)}
               </TableCell>
             </TableRow>
           ))}

@@ -1,10 +1,8 @@
 import {
-  AlertTriangle,
   BarChart3,
   ClipboardCheck,
   FileText,
   FolderKanban,
-  GitBranch,
   LayoutDashboard,
   Settings,
   Users,
@@ -22,18 +20,6 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderKanban },
-  {
-    label: "Variations",
-    href: "/variations",
-    icon: GitBranch,
-    comingSoon: true,
-  },
-  {
-    label: "Risks & Issues",
-    href: "/risks",
-    icon: AlertTriangle,
-    comingSoon: true,
-  },
   {
     label: "Inspections",
     href: "/inspections",

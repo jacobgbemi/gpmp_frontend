@@ -176,9 +176,62 @@ present, falling back to `approved − paid`.
 never generated or inferred on the frontend — if a field is missing,
 that line is simply omitted.
 
-## Stage 2 scope
+## Stage 3 — Variations, Risks & Issues
 
-Only the routes above were added. Variations, Risks & Issues,
-Inspections, Documents, Reports, Team and Settings remain disabled
-placeholders in both the sidebar and the per-project tab bar — do not
-wire them up until their own stage.
+Adds three more per-project tabs: `/projects/:id/variations`,
+`/projects/:id/risks`, `/projects/:id/issues`. Unlike Stage 2, the
+real backend for this stage already existed when this was built
+(`gpmp_backend`, stage3 branch), so every type, endpoint, status enum
+and transition rule below is copied directly from that codebase, not
+guessed.
+
+**Variations — the approved-cost rule.** The one rule this whole
+module exists to enforce, in exactly one place
+(`features/variations/lib/exposure.ts`): a variation only affects
+approved cost once its status reaches `APPROVED`, `IMPLEMENTED` or
+`CLOSED`. A `PROPOSED`/`UNDER_REVIEW` variation's `requested_amount`
+is shown as separate *pending exposure* — never summed into approved
+cost — and a `REJECTED` variation counts toward neither. `VariationSummary`
+renders these as three visually distinct figures. Reaching `APPROVED`
+only ever happens through the dedicated `POST /api/variations/{id}/approve/`
+action (`ApproveVariationDialog`, gated to
+`PLATFORM_ADMIN`/`ORGANIZATION_ADMIN`/`PROJECT_CONTROLS`); every other
+status change goes through `PATCH /api/variations/{id}/`, restricted to
+the transitions in `features/variations/lib/transitions.ts` (a direct
+copy of the backend's `VARIATION_STATUS_TRANSITIONS`).
+
+**Risks — scoring and the matrix.** `risk_score` (`probability ×
+impact`, 1–25) and `risk_level` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`,
+banded at 4/8/15) are always computed server-side; the frontend
+mirrors the exact same formula in `features/risks/lib/riskLevel.ts`
+only to show a live preview while filling out the create-risk form —
+the value actually persisted always comes back from the API. The 5×5
+`RiskMatrix` counts only non-`CLOSED` risks, since it represents
+exposure right now, not history.
+
+**Issues.** A deliberately separate resource from Risk — a risk is a
+potential future problem, an issue has already happened. Nothing
+auto-converts one into the other. Moving an issue to `RESOLVED`
+requires a non-empty `resolution`, enforced by both the Zod schema on
+the frontend and the backend — see `issueStatusRequiresResolution` in
+`features/risks/lib/transitions.ts`.
+
+**Permissions.** `features/projects/hooks/useProjectRole.ts` reads the
+current user's role for a project's organization from
+`/api/auth/me/`'s `memberships` array and mirrors the backend's
+`PROJECT_WRITE_ROLES`/`VARIATION_APPROVAL_ROLES` to decide which
+create/edit/approve controls to show. This is a UI convenience only —
+the backend re-checks every write regardless, so a stale or
+manipulated client-side role check can never grant real access.
+
+**Owner selection.** Risk and Issue forms populate their "Owner"
+dropdown from `GET /api/organizations/{id}/members/` — the same set
+the backend validates `owner` against — via
+`features/organizations/api/useOrganizationMembers.ts`.
+
+## Scope
+
+Stage 1: auth + app shell. Stage 2: Projects + owner dashboard. Stage
+3: Variations, Risks, Issues. Inspections, Documents, Reports, Team
+and Settings remain disabled placeholders in both the sidebar and the
+per-project tab bar — do not wire them up until their own stage.

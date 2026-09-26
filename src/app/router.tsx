@@ -11,11 +11,15 @@ import { ProjectsPage } from "@/features/projects/pages/ProjectsPage";
 import { ProjectDashboardPage } from "@/features/projects/pages/ProjectDashboardPage";
 import { ProjectProgressPage } from "@/features/projects/pages/ProjectProgressPage";
 import { ProjectPaymentsPage } from "@/features/projects/pages/ProjectPaymentsPage";
+import { VariationsPage } from "@/features/variations/pages/VariationsPage";
+import { RisksPage } from "@/features/risks/pages/RisksPage";
+import { IssuesPage } from "@/features/risks/pages/IssuesPage";
 
 /**
- * Stage 2 route map. Auth (Stage 1) plus Projects + the owner
- * dashboard (Stage 2). Do not add Variations/Risks/Inspections/
- * Documents/Reports/Team routes until their stages are built.
+ * Stage 3 route map. Auth (Stage 1), Projects + owner dashboard
+ * (Stage 2), and Variations/Risks/Issues (Stage 3). Do not add
+ * Inspections/Documents/Reports/Team routes until their stages are
+ * built.
  */
 export function AppRouter() {
   return (
@@ -36,6 +40,9 @@ export function AppRouter() {
             <Route path="dashboard" element={<ProjectDashboardPage />} />
             <Route path="progress" element={<ProjectProgressPage />} />
             <Route path="payments" element={<ProjectPaymentsPage />} />
+            <Route path="variations" element={<VariationsPage />} />
+            <Route path="risks" element={<RisksPage />} />
+            <Route path="issues" element={<IssuesPage />} />
           </Route>
         </Route>
       </Route>

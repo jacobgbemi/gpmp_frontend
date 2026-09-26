@@ -9,16 +9,12 @@ const TABS = [
   { label: "Overview", to: "dashboard" },
   { label: "Progress", to: "progress" },
   { label: "Payments", to: "payments" },
+  { label: "Variations", to: "variations" },
+  { label: "Risks", to: "risks" },
+  { label: "Issues", to: "issues" },
 ];
 
-const COMING_SOON_TABS = [
-  "Variations",
-  "Risks",
-  "Inspections",
-  "Documents",
-  "Reports",
-  "Team",
-];
+const COMING_SOON_TABS = ["Inspections", "Documents", "Reports", "Team"];
 
 /**
  * Shell for every /projects/:id/* route: back link, project name,
